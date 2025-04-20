@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'Working Capital',
             'Recovery Process',
             'Inventory Management',
-            'Day Payables Outstanding'
+            'Days Payables Outstanding'
         ],
         typeSpeed: 50,
         backSpeed: 30,
@@ -32,7 +32,7 @@ const translations = {
             'Working Capital',
             'Recovery Process',
             'Inventory Management',
-            'Day Payables Outstanding'
+            'Days Payables Outstanding'
         ],
         subtitle: 'Advisory | Automation | Execution',
         contactUs: 'Contact Us',
@@ -119,7 +119,13 @@ const translations = {
         // Footer
         privacy: 'Privacy Policy',
         legal: 'Legal Mentions',
-        copyright: '© 2025 WKA. All rights reserved.'
+        copyright: '© 2025 WKA. All rights reserved.',
+
+        // Contact Form
+        success: "Your message has been sent successfully. We will get back to you shortly.",
+        error: "An error occurred while sending the message. Please try again.",
+        invalidEmail: "Please enter a valid email address.",
+        required: "This field is required."
     },
     fr: {
         // Navigation
@@ -144,7 +150,7 @@ const translations = {
         contextTitle: 'Contexte',
         companiesLate: '1 entreprise sur 3 paie ses factures en retard',
         daysDelay: '11,9 jours de retard en moyenne',
-        cashFlow: 'La trésorerie est la 1ère cause de défaillance',
+        cashFlow: 'La trésorerie est la 1ère cause de défaillance d\'entreprise',
         dataSource: 'Données FR | source : Banque de France, Insee, Altares',
 
         // Why WKA Section
@@ -222,7 +228,13 @@ const translations = {
         // Footer
         privacy: 'Politique de Confidentialité',
         legal: 'Mentions Légales',
-        copyright: '© 2025 WKA. Tous droits réservés.'
+        copyright: '© 2025 WKA. Tous droits réservés.',
+
+        // Contact Form
+        success: "Votre message a été envoyé avec succès. Nous vous répondrons dans les plus brefs délais.",
+        error: "Une erreur s'est produite lors de l'envoi du message. Veuillez réessayer.",
+        invalidEmail: "Veuillez entrer une adresse email valide.",
+        required: "Ce champ est requis."
     }
 };
 
@@ -421,24 +433,84 @@ document.querySelectorAll('.stat-card, .feature, .service-card, .roi-card').forE
 });
 
 // Gestion du formulaire de contact
-const contactForm = document.querySelector('.contact-form');
-if (contactForm) {
-    contactForm.addEventListener('submit', function(e) {
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('contactForm');
+    if (!form) return;
+
+    function validateEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function showMessage(type, messageKey) {
+        const lang = document.documentElement.lang || 'en';
+        const message = translations[lang][messageKey];
+        
+        const existingMessage = form.querySelector('.form-message');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `form-message ${type}`;
+        messageDiv.textContent = message;
+        form.insertBefore(messageDiv, form.firstChild);
+
+        if (type === 'success') {
+            form.reset();
+        }
+    }
+
+    form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        // Récupérer les valeurs du formulaire
-        const email = this.querySelector('input[type="email"]').value;
-        const message = this.querySelector('textarea').value;
+        const submitButton = form.querySelector('button[type="submit"]');
+        const email = form.querySelector('input[type="email"]').value;
+        const required = form.querySelectorAll('[required]');
+        let isValid = true;
+
+        required.forEach(field => {
+            if (!field.value.trim()) {
+                isValid = false;
+                field.classList.add('error');
+            } else {
+                field.classList.remove('error');
+            }
+        });
+
+        if (!validateEmail(email)) {
+            isValid = false;
+            showMessage('error', 'invalidEmail');
+            return;
+        }
+
+        if (!isValid) {
+            showMessage('error', 'required');
+            return;
+        }
+
+        submitButton.disabled = true;
         
-        // Ici, vous pouvez ajouter le code pour envoyer les données à votre backend
-        console.log('Email:', email);
-        console.log('Message:', message);
-        
-        // Afficher un message de confirmation
-        alert('Merci pour votre message. Nous vous contacterons bientôt.');
-        this.reset();
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                showMessage('success', 'success');
+            } else {
+                throw new Error('Network response was not ok.');
+            }
+        } catch (error) {
+            showMessage('error', 'error');
+        } finally {
+            submitButton.disabled = false;
+        }
     });
-}
+});
 
 // Smooth scroll pour les liens d'ancrage
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
